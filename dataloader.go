@@ -48,6 +48,7 @@ func (d *DataLoader) Load(key interface{}) (interface{}, error) {
 	}
 
 	d.mutex.Lock()
+	defer d.mutex.Unlock()
 
 	// Determine options
 	shouldBatch := d.options == nil || d.options.Batch == true
@@ -61,7 +62,6 @@ func (d *DataLoader) Load(key interface{}) (interface{}, error) {
 	if shouldCache {
 		cachedFuture := d.futureCache.Get(cacheKey)
 		if cachedFuture != nil {
-			d.mutex.Unlock()
 			return cachedFuture.(Future)()
 		}
 	}
@@ -80,8 +80,6 @@ func (d *DataLoader) Load(key interface{}) (interface{}, error) {
 	if shouldCache {
 		d.futureCache.Set(cacheKey, future)
 	}
-
-	d.mutex.Unlock()
 
 	d.queue.Push(LoaderQueueItem{
 		Key: key,
